@@ -43,15 +43,13 @@ local score = 0
 local highscore = 0
 local currentNoteIndex = 1
 
--- Colors for the notes
 local noteColors = {
-    left = {1, 0, 1},    -- Magenta (D)
-    down = {0, 1, 1},    -- Cyan (F)
-    up = {0, 1, 0},      -- Green (J)
-    right = {1, 0, 0}    -- Red (K)
+    left = {1, 0, 1},    
+    down = {0, 1, 1},   
+    up = {0, 1, 0},      
+    right = {1, 0, 0}    
 }
 
--- Hitbox positions for DFJK (left, down, up, right mapped to D, F, J, K)
 local hitBoxes = {
     {key = "left", x = 200, y = 450, width = 50, height = 50},
     {key = "down", x = 300, y = 450, width = 50, height = 50},
@@ -59,7 +57,6 @@ local hitBoxes = {
     {key = "right", x = 500, y = 450, width = 50, height = 50}
 }
 
--- Key mapping: DFJK to left, down, up, right
 local keyMap = {
     d = "left",
     f = "down",
@@ -67,50 +64,40 @@ local keyMap = {
     k = "right"
 }
 
--- Hold states for DFJK keys
 local keyHeld = {d = false, f = false, j = false, k = false}
 
--- Song length and timers
-local songDuration = 67 -- Song length in seconds
+local songDuration = 67
 local songTime = 0
 local songEnded = false
 local timeSinceSongEnd = 0
 
--- Background image
 local backgroundImage
 local customMousePointer
 
 function love.load()
     
-    -- Set window dimensions
     love.window.setMode(800, 600)
 
-    -- Load background image
     backgroundImage = love.graphics.newImage("background.png")
 
-    -- Load custom mouse pointer image
     customMousePointer = love.graphics.newImage("cursor.png")
 
-    -- Debugging output
     if customMousePointer then
         print("Cursor image loaded successfully!")
     else
         print("Failed to load cursor image.")
     end
 
-    -- Load highscore from file (if exists)
     highscore = loadHighScore()
 
-    -- Set the mouse cursor to invisible
     love.mouse.setVisible(false)
 
-    song = love.audio.newSource("song.mp3", "stream") -- Use "static" for shorter sounds
-    song:setVolume(0.5) -- Set the volume (0 to 1)
-    song:play() -- Play the song
+    song = love.audio.newSource("song.mp3", "stream") 
+    song:setVolume(0.5))
+    song:play()
 end
 
 
--- Function to spawn notes based on time
 function spawnNoteAtTime()
     if currentNoteIndex <= #notes then
         local nextNote = notes[currentNoteIndex]
@@ -127,70 +114,58 @@ function spawnNoteAtTime()
                 xPosition = 500
             end
 
-            -- Add the note to the spawnedNotes table
             table.insert(spawnedNotes, {x = xPosition, y = 0, type = nextNote.type})
             currentNoteIndex = currentNoteIndex + 1
         end
     end
 end
 
--- Check if the player hit the correct note
 function checkNoteHit(note, key)
     if key == note.type then
-        return math.abs(note.y - 450) < 50 -- Check if note is within the hitbox (450 is the hit zone)
+        return math.abs(note.y - 450) < 50 -
     end
     return false
 end
 
 function love.update(dt)
     if not songEnded then
-        -- Update song time
         songTime = songTime + dt
 
-        -- Spawn notes based on their specific time
         spawnNoteAtTime()
 
-        -- Update note positions
         for i = #spawnedNotes, 1, -1 do
             local note = spawnedNotes[i]
             note.y = note.y + noteSpeed * dt
 
-            -- Remove notes that have gone off screen
             if note.y > love.graphics.getHeight() then
                 table.remove(spawnedNotes, i)
             end
         end
 
-        -- Check if the song has ended
         if songTime >= songDuration then
             songEnded = true
             timeSinceSongEnd = 0
         end
     else
-        -- Once the song ends, stop updating further notes
         timeSinceSongEnd = timeSinceSongEnd + dt
 
-        -- Remove any remaining notes on the screen
         if #spawnedNotes > 0 then
             spawnedNotes = {}
         end
 
-        -- After 3.5 seconds, save highscore and close
         if timeSinceSongEnd >= 1 then
             if score > highscore then
                 saveHighScore(score)
             end
-            love.event.quit() -- Close the game window
+            love.event.quit()
         end
     end
 end
 
 function love.draw()
-    -- Draw the background image
     love.graphics.draw(backgroundImage, 0, 0, 0, love.graphics.getWidth() / backgroundImage:getWidth(), love.graphics.getHeight() / backgroundImage:getHeight())
 
-    -- Draw the hitboxes
-    love.graphics.setColor(0.5, 0.5, 0.5) -- Gray color
+    love.graphics.setColor(0.5, 0.5, 0.5)
     for _, hitBox in ipairs(hitBoxes) do
         love.graphics.rectangle("fill", hitBox.x, hitBox.y, hitBox.width, hitBox.height)
     end
@@ -199,55 +174,49 @@ function love.draw()
     for _, note in ipairs(spawnedNotes) do
         local color = noteColors[note.type]
 
-        -- Apply glow effect if holding the corresponding key
         if keyHeld[keyMap[note.type]] then
-            love.graphics.setColor(color[1], color[2], color[3], 1) -- Full brightness
-            -- Draw glow as a border
+            love.graphics.setColor(color[1], color[2], color[3], 1)
             love.graphics.setLineWidth(5)
             love.graphics.rectangle("line", note.x, note.y, 50, 50)
         else
-            love.graphics.setColor(color[1], color[2], color[3], 0.7) -- Normal color
+            love.graphics.setColor(color[1], color[2], color[3], 0.7)
         end
 
         love.graphics.rectangle("fill", note.x, note.y, 50, 50)
     end
 
-    -- Draw the score
     love.graphics.setColor(1, 1, 1)
     love.graphics.print("Score: " .. score, 10, 10)
     love.graphics.print("Highscore: " .. highscore, 10, 30)
 
-    -- Draw custom mouse pointer with scaling
     local mouseX, mouseY = love.mouse.getPosition()
-    love.graphics.draw(customMousePointer, mouseX, mouseY, 0, 16 / 512, 16 / 512) -- Scale to 16x16
+    love.graphics.draw(customMousePointer, mouseX, mouseY, 0, 16 / 512, 16 / 512)
 end
 
 
 -- Key press handler
 function love.keypressed(key)
     if key == "escape" then
-        love.event.quit() -- Close the game window
+        love.event.quit() -
     elseif keyMap[key] then
         keyHeld[key] = true
         for i = #spawnedNotes, 1, -1 do
             local note = spawnedNotes[i]
             if checkNoteHit(note, keyMap[key]) then
                 table.remove(spawnedNotes, i)
-                score = score + 1 -- Increment score on hit
+                score = score + 1 
                 break
             end
         end
     end
 end
 
--- Key release handler
 function love.keyreleased(key)
     if keyMap[key] then
         keyHeld[key] = false
     end
 end
 
--- Highscore loading/saving functions
 function loadHighScore()
     local file = io.open("score.txt", "r")
     if file then
